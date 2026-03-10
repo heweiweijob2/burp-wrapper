@@ -13,5 +13,5 @@ def mock_api():
 
 @pytest.fixture
 def client():
-    """Create a BurpClient instance."""
-    return BurpClient(base_url="http://127.0.0.1:9876")
+    """Create a BurpClient instance with logging disabled."""
+    return BurpClient(base_url="http://127.0.0.1:9876", enable_logging=False)

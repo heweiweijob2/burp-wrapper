@@ -5,10 +5,10 @@ import httpx
 
 class TestDashboardTasks:
     def test_get_tasks(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "tasks": [
                             {
@@ -32,10 +32,10 @@ class TestDashboardTasks:
 
 class TestDashboardIssuesSummary:
     def test_get_issues_summary(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "total": 10,
                         "by_severity": {"high": 2, "medium": 3, "low": 3, "info": 2},

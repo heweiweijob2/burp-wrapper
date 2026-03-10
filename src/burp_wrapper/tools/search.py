@@ -8,6 +8,8 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class SearchTools(BaseTools):
+    tool_name = "search"
+
     def find(
         self,
         query: str,
@@ -17,4 +19,4 @@ class SearchTools(BaseTools):
         params: dict[str, Any] = {"query": query, "limit": limit}
         if scope is not None:
             params["scope"] = scope
-        return self._call("search.find", params)
+        return self._call("find", params)

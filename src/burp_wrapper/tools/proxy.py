@@ -8,6 +8,8 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class ProxyTools(BaseTools):
+    tool_name = "proxy"
+
     def get_history(
         self,
         limit: int = 100,
@@ -36,10 +38,10 @@ class ProxyTools(BaseTools):
             params["filter_search"] = filter_search
         if has_params is not None:
             params["has_params"] = has_params
-        return self._call("proxy.getHistory", params)
+        return self._call("getHistory", params)
 
     def get_request(self, request_id: str) -> dict[str, Any]:
-        return self._call("proxy.getRequest", {"request_id": request_id})
+        return self._call("getRequest", {"request_id": request_id})
 
     def get_websocket_history(
         self, limit: int = 100, filter_url: str | None = None
@@ -47,13 +49,13 @@ class ProxyTools(BaseTools):
         params: dict[str, Any] = {"limit": limit}
         if filter_url is not None:
             params["filter_url"] = filter_url
-        return self._call("proxy.getWebSocketHistory", params)
+        return self._call("getWebSocketHistory", params)
 
     def intercept_toggle(self, enabled: bool) -> dict[str, Any]:
-        return self._call("proxy.interceptToggle", {"enabled": enabled})
+        return self._call("interceptToggle", {"enabled": enabled})
 
     def intercept_get_message(self) -> dict[str, Any]:
-        return self._call("proxy.interceptGetMessage")
+        return self._call("interceptGetMessage")
 
     def intercept_forward(
         self, message_id: str, modified_raw: str | None = None
@@ -61,10 +63,10 @@ class ProxyTools(BaseTools):
         params: dict[str, Any] = {"message_id": message_id}
         if modified_raw is not None:
             params["modified_raw"] = modified_raw
-        return self._call("proxy.interceptForward", params)
+        return self._call("interceptForward", params)
 
     def intercept_drop(self, message_id: str) -> dict[str, Any]:
-        return self._call("proxy.interceptDrop", {"message_id": message_id})
+        return self._call("interceptDrop", {"message_id": message_id})
 
     def add_match_replace_rule(
         self,
@@ -76,7 +78,7 @@ class ProxyTools(BaseTools):
         comment: str = "",
     ) -> dict[str, Any]:
         return self._call(
-            "proxy.addMatchReplaceRule",
+            "addMatchReplaceRule",
             {
                 "rule": {
                     "enabled": enabled,

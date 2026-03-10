@@ -8,10 +8,12 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class ClickbanditTools(BaseTools):
+    tool_name = "clickbandit"
+
     def generate(
         self, url: str, config: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         params: dict[str, Any] = {"url": url}
         if config is not None:
             params["config"] = config
-        return self._call("clickbandit.generate", params)
+        return self._call("generate", params)

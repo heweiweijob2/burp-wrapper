@@ -8,17 +8,17 @@ import httpx
 
 class TestOrganizer:
     def test_add(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"organizer_id": "org-1"}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"organizer_id": "org-1"}})
         )
         result = client.organizer.add("req-1", collection="auth")
         assert result["organizer_id"] == "org-1"
 
     def test_list(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "items": [
                             {
@@ -39,21 +39,21 @@ class TestOrganizer:
         assert len(result["items"]) == 1
 
     def test_annotate(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         assert client.organizer.annotate("org-1", "Needs review")["success"] is True
 
     def test_get_collections(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"collections": ["auth", "api"]}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"collections": ["auth", "api"]}})
         )
         result = client.organizer.get_collections()
         assert "auth" in result["collections"]
 
     def test_create_collection(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         assert client.organizer.create_collection("payments")["success"] is True
 
@@ -62,10 +62,10 @@ class TestOrganizer:
 
 class TestSearch:
     def test_find(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "total_matches": 2,
                         "results": [
@@ -86,22 +86,22 @@ class TestSearch:
         assert result["total_matches"] == 2
 
     def test_find_with_scope(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"total_matches": 0, "results": []}})
+        route = mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"total_matches": 0, "results": []}})
         )
         client.search.find("token", scope={"tools": ["proxy"], "is_regex": False})
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["scope"]["tools"] == ["proxy"]
+        assert body["params"]["arguments"]["scope"]["tools"] == ["proxy"]
 
 
 # --- INSPECTOR ---
 
 class TestInspector:
     def test_parse_request(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "method": "POST",
                         "path": "/login",
@@ -126,10 +126,10 @@ class TestInspector:
         assert len(result["parameters"]["body"]) == 2
 
     def test_parse_response(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "status_code": 200,
                         "status_text": "OK",
@@ -148,10 +148,10 @@ class TestInspector:
         assert result["attributes"]["is_json"] is True
 
     def test_build_request(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={"result": {"raw_request": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"}},
+                json={"jsonrpc": "2.0", "id": 1, "result": {"raw_request": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"}},
             )
         )
         result = client.inspector.build_request(
@@ -164,10 +164,10 @@ class TestInspector:
 
 class TestEngagement:
     def test_analyze_target(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "summary": {"total_links": 50, "total_forms": 3, "total_params": 10, "static_urls": 30, "dynamic_urls": 20},
                         "parameters": [{"name": "id", "type": "url", "url_count": 5, "values_seen": ["1", "2"]}],
@@ -180,17 +180,17 @@ class TestEngagement:
         assert result["summary"]["total_forms"] == 3
 
     def test_discover_content(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"task_id": "disc-1"}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"task_id": "disc-1"}})
         )
         result = client.engagement.discover_content("https://example.com")
         assert result["task_id"] == "disc-1"
 
     def test_content_discovery_results(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "status": "completed",
                         "discovered": [
@@ -205,10 +205,10 @@ class TestEngagement:
         assert len(result["discovered"]) == 1
 
     def test_generate_csrf_poc(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={"result": {"html": "<html><form>...</form></html>", "auto_submit": True}},
+                json={"jsonrpc": "2.0", "id": 1, "result": {"html": "<html><form>...</form></html>", "auto_submit": True}},
             )
         )
         result = client.engagement.generate_csrf_poc("req-1")
@@ -219,10 +219,10 @@ class TestEngagement:
 
 class TestExtensions:
     def test_list(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "extensions": [
                             {"name": "Logger++", "enabled": True, "type": "java", "filename": "logger.jar", "errors": []}
@@ -235,20 +235,20 @@ class TestExtensions:
         assert len(result["extensions"]) == 1
 
     def test_enable(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         assert client.extensions.enable("Logger++")["success"] is True
 
     def test_disable(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         assert client.extensions.disable("Logger++")["success"] is True
 
     def test_reload(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         assert client.extensions.reload("Logger++")["success"] is True
 
@@ -257,32 +257,32 @@ class TestExtensions:
 
 class TestConfig:
     def test_get_project(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={"result": {"project_name": "Test", "project_file": "/tmp/test.burp", "config": {}}},
+                json={"jsonrpc": "2.0", "id": 1, "result": {"project_name": "Test", "project_file": "/tmp/test.burp", "config": {}}},
             )
         )
         result = client.config.get_project()
         assert result["project_name"] == "Test"
 
     def test_get_user(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"config": {"theme": "dark"}}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"config": {"theme": "dark"}}})
         )
         result = client.config.get_user()
         assert result["config"]["theme"] == "dark"
 
     def test_export_project(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"json": "{}"}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"json": "{}"}})
         )
         result = client.config.export_project()
         assert result["json"] == "{}"
 
     def test_import_project(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         assert client.config.import_project("{}")["success"] is True
 
@@ -291,10 +291,10 @@ class TestConfig:
 
 class TestClickbandit:
     def test_generate(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={"result": {"html": "<html>...</html>", "interactive": True}},
+                json={"jsonrpc": "2.0", "id": 1, "result": {"html": "<html>...</html>", "interactive": True}},
             )
         )
         result = client.clickbandit.generate("https://example.com/settings")

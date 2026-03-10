@@ -7,10 +7,10 @@ import httpx
 
 class TestLoggerQuery:
     def test_query_with_filters(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
+        route = mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "total": 1,
                         "entries": [
@@ -38,13 +38,13 @@ class TestLoggerQuery:
         )
         assert result["total"] == 1
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["filters"]["tools"] == ["proxy"]
+        assert body["params"]["arguments"]["filters"]["tools"] == ["proxy"]
 
 
 class TestLoggerAnnotate:
     def test_annotate(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         result = client.logger.annotate("req-1", comment="Interesting", highlight="red")
         assert result["success"] is True
@@ -52,9 +52,9 @@ class TestLoggerAnnotate:
 
 class TestLoggerExport:
     def test_export_as_curl(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
-                200, json={"result": {"data": "curl -X GET https://example.com/"}}
+                200, json={"jsonrpc": "2.0", "id": 1, "result": {"data": "curl -X GET https://example.com/"}}
             )
         )
         result = client.logger.export(["req-1"], format="curl")

@@ -8,6 +8,8 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class ScannerTools(BaseTools):
+    tool_name = "scanner"
+
     def crawl(
         self,
         target: str | list[str],
@@ -16,7 +18,7 @@ class ScannerTools(BaseTools):
         params: dict[str, Any] = {"target": target}
         if config is not None:
             params["config"] = config
-        return self._call("scanner.crawl", params)
+        return self._call("crawl", params)
 
     def audit(
         self,
@@ -31,7 +33,7 @@ class ScannerTools(BaseTools):
             params["request_id"] = request_id
         if config is not None:
             params["config"] = config
-        return self._call("scanner.audit", params)
+        return self._call("audit", params)
 
     def crawl_and_audit(
         self,
@@ -41,10 +43,10 @@ class ScannerTools(BaseTools):
         params: dict[str, Any] = {"target": target}
         if config is not None:
             params["config"] = config
-        return self._call("scanner.crawlAndAudit", params)
+        return self._call("crawlAndAudit", params)
 
     def status(self, scan_id: str) -> dict[str, Any]:
-        return self._call("scanner.status", {"scan_id": scan_id})
+        return self._call("status", {"scan_id": scan_id})
 
     def issues(
         self,
@@ -56,16 +58,16 @@ class ScannerTools(BaseTools):
             params["scan_id"] = scan_id
         if filters is not None:
             params["filters"] = filters
-        return self._call("scanner.issues", params)
+        return self._call("issues", params)
 
     def pause(self, scan_id: str) -> dict[str, Any]:
-        return self._call("scanner.pause", {"scan_id": scan_id})
+        return self._call("pause", {"scan_id": scan_id})
 
     def resume(self, scan_id: str) -> dict[str, Any]:
-        return self._call("scanner.resume", {"scan_id": scan_id})
+        return self._call("resume", {"scan_id": scan_id})
 
     def stop(self, scan_id: str) -> dict[str, Any]:
-        return self._call("scanner.stop", {"scan_id": scan_id})
+        return self._call("stop", {"scan_id": scan_id})
 
     def get_issue_definitions(self) -> dict[str, Any]:
-        return self._call("scanner.getIssueDefinitions")
+        return self._call("getIssueDefinitions")

@@ -8,16 +8,18 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class TargetTools(BaseTools):
+    tool_name = "target"
+
     def get_sitemap(
         self, root_url: str | None = None, include_responses: bool = False
     ) -> dict[str, Any]:
         params: dict[str, Any] = {"include_responses": include_responses}
         if root_url is not None:
             params["root_url"] = root_url
-        return self._call("target.getSitemap", params)
+        return self._call("getSitemap", params)
 
     def get_scope(self) -> dict[str, Any]:
-        return self._call("target.getScope")
+        return self._call("getScope")
 
     def set_scope(
         self,
@@ -25,18 +27,18 @@ class TargetTools(BaseTools):
         exclude: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         return self._call(
-            "target.setScope",
+            "setScope",
             {"include": include, "exclude": exclude or []},
         )
 
     def add_to_scope(self, url: str) -> dict[str, Any]:
-        return self._call("target.addToScope", {"url": url})
+        return self._call("addToScope", {"url": url})
 
     def is_in_scope(self, url: str) -> dict[str, Any]:
-        return self._call("target.isInScope", {"url": url})
+        return self._call("isInScope", {"url": url})
 
     def get_issues(self, host: str | None = None) -> dict[str, Any]:
         params: dict[str, Any] = {}
         if host is not None:
             params["host"] = host
-        return self._call("target.getIssues", params)
+        return self._call("getIssues", params)

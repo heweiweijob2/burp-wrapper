@@ -7,10 +7,10 @@ import httpx
 
 class TestRepeaterSend:
     def test_send_by_request_id(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "request_sent": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n",
                         "response": {
@@ -35,10 +35,10 @@ class TestRepeaterSend:
         assert result["new_request_id"] == "req-2"
 
     def test_send_raw_request(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
+        route = mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "request_sent": "GET / HTTP/1.1\r\n",
                         "response": {"raw": "", "status_code": 200, "headers": [], "body": "", "length": 0},
@@ -55,15 +55,15 @@ class TestRepeaterSend:
             https=True,
         )
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["raw_request"] == "GET / HTTP/1.1\r\nHost: test.com\r\n\r\n"
-        assert body["params"]["host"] == "test.com"
-        assert body["params"]["port"] == 443
+        assert body["params"]["arguments"]["raw_request"] == "GET / HTTP/1.1\r\nHost: test.com\r\n\r\n"
+        assert body["params"]["arguments"]["host"] == "test.com"
+        assert body["params"]["arguments"]["port"] == 443
 
     def test_send_with_follow_redirects(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
+        route = mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "request_sent": "",
                         "response": {"raw": "", "status_code": 302, "headers": [], "body": "", "length": 0},
@@ -75,15 +75,15 @@ class TestRepeaterSend:
         )
         client.repeater.send(request_id="req-1", follow_redirects=True)
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["follow_redirects"] is True
+        assert body["params"]["arguments"]["follow_redirects"] is True
 
 
 class TestRepeaterSendModified:
     def test_send_with_modifications(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
+        route = mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "request_sent": "",
                         "response": {"raw": "", "status_code": 200, "headers": [], "body": "", "length": 0},
@@ -102,16 +102,16 @@ class TestRepeaterSendModified:
             },
         )
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["request_id"] == "req-1"
-        assert body["params"]["modifications"]["method"] == "POST"
+        assert body["params"]["arguments"]["request_id"] == "req-1"
+        assert body["params"]["arguments"]["modifications"]["method"] == "POST"
 
 
 class TestRepeaterSendBatch:
     def test_send_batch_variations(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "results": [
                             {
@@ -145,9 +145,9 @@ class TestRepeaterSendBatch:
 
 class TestRepeaterCreateTab:
     def test_create_tab(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
-                200, json={"result": {"tab_id": "tab-1", "success": True}}
+                200, json={"jsonrpc": "2.0", "id": 1, "result": {"tab_id": "tab-1", "success": True}}
             )
         )
         result = client.repeater.create_tab("req-1", name="Login Test")

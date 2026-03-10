@@ -8,6 +8,8 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class LoggerTools(BaseTools):
+    tool_name = "logger"
+
     def query(
         self,
         filters: dict[str, Any] | None = None,
@@ -24,7 +26,7 @@ class LoggerTools(BaseTools):
         }
         if filters is not None:
             params["filters"] = filters
-        return self._call("logger.query", params)
+        return self._call("query", params)
 
     def annotate(
         self,
@@ -37,9 +39,9 @@ class LoggerTools(BaseTools):
             params["comment"] = comment
         if highlight is not None:
             params["highlight"] = highlight
-        return self._call("logger.annotate", params)
+        return self._call("annotate", params)
 
     def export(self, request_ids: list[str], format: str) -> dict[str, Any]:
         return self._call(
-            "logger.export", {"request_ids": request_ids, "format": format}
+            "export", {"request_ids": request_ids, "format": format}
         )

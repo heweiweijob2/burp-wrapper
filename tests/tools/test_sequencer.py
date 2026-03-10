@@ -7,9 +7,9 @@ import httpx
 
 class TestSequencerCapture:
     def test_start_live_capture(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
-                200, json={"result": {"capture_id": "cap-1", "status": "capturing"}}
+                200, json={"jsonrpc": "2.0", "id": 1, "result": {"capture_id": "cap-1", "status": "capturing"}}
             )
         )
         result = client.sequencer.start_live_capture(
@@ -20,10 +20,10 @@ class TestSequencerCapture:
         assert result["capture_id"] == "cap-1"
 
     def test_capture_status(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={"result": {"status": "capturing", "samples_collected": 100, "samples_target": 200}},
+                json={"jsonrpc": "2.0", "id": 1, "result": {"status": "capturing", "samples_collected": 100, "samples_target": 200}},
             )
         )
         result = client.sequencer.capture_status("cap-1")
@@ -32,25 +32,25 @@ class TestSequencerCapture:
 
 class TestSequencerAnalyze:
     def test_analyze_capture(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"analysis_id": "ana-1"}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"analysis_id": "ana-1"}})
         )
         result = client.sequencer.analyze("cap-1")
         assert result["analysis_id"] == "ana-1"
 
     def test_analyze_manual(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"analysis_id": "ana-2"}})
+        route = mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"analysis_id": "ana-2"}})
         )
         client.sequencer.analyze_manual(["token1", "token2", "token3"])
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["tokens"] == ["token1", "token2", "token3"]
+        assert body["params"]["arguments"]["tokens"] == ["token1", "token2", "token3"]
 
     def test_results(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "overall_result": "excellent",
                         "effective_entropy_bits": 120.5,

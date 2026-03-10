@@ -8,22 +8,24 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class CollaboratorTools(BaseTools):
+    tool_name = "collaborator"
+
     def generate_payload(self) -> dict[str, Any]:
-        return self._call("collaborator.generatePayload")
+        return self._call("generatePayload")
 
     def generate_payloads(self, count: int) -> dict[str, Any]:
-        return self._call("collaborator.generatePayloads", {"count": count})
+        return self._call("generatePayloads", {"count": count})
 
     def poll(self, interaction_id: str | None = None) -> dict[str, Any]:
         params: dict[str, Any] = {}
         if interaction_id is not None:
             params["interaction_id"] = interaction_id
-        return self._call("collaborator.poll", params)
+        return self._call("poll", params)
 
     def poll_until(
         self, interaction_id: str, timeout_seconds: int = 30
     ) -> dict[str, Any]:
         return self._call(
-            "collaborator.pollUntil",
+            "pollUntil",
             {"interaction_id": interaction_id, "timeout_seconds": timeout_seconds},
         )

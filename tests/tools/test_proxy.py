@@ -5,10 +5,10 @@ import httpx
 
 class TestProxyGetHistory:
     def test_returns_entries(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "total": 1,
                         "entries": [
@@ -43,8 +43,8 @@ class TestProxyGetHistory:
     def test_passes_filters(self, client, mock_api):
         import json
 
-        route = mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"total": 0, "entries": []}})
+        route = mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"total": 0, "entries": []}})
         )
         client.proxy.get_history(
             limit=50,
@@ -54,29 +54,29 @@ class TestProxyGetHistory:
             in_scope_only=True,
         )
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["limit"] == 50
-        assert body["params"]["offset"] == 10
-        assert body["params"]["filter_host"] == "target.com"
-        assert body["params"]["filter_method"] == "POST"
-        assert body["params"]["in_scope_only"] is True
+        assert body["params"]["arguments"]["limit"] == 50
+        assert body["params"]["arguments"]["offset"] == 10
+        assert body["params"]["arguments"]["filter_host"] == "target.com"
+        assert body["params"]["arguments"]["filter_method"] == "POST"
+        assert body["params"]["arguments"]["in_scope_only"] is True
 
     def test_default_limit(self, client, mock_api):
         import json
 
-        route = mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"total": 0, "entries": []}})
+        route = mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"total": 0, "entries": []}})
         )
         client.proxy.get_history()
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["limit"] == 100
+        assert body["params"]["arguments"]["limit"] == 100
 
 
 class TestProxyGetRequest:
     def test_returns_full_request_detail(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "id": "req-1",
                         "request": {
@@ -122,10 +122,10 @@ class TestProxyGetRequest:
 
 class TestProxyWebSocket:
     def test_get_websocket_history(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "total": 1,
                         "connections": [
@@ -148,24 +148,24 @@ class TestProxyWebSocket:
 
 class TestProxyIntercept:
     def test_toggle_on(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"intercept_enabled": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"intercept_enabled": True}})
         )
         result = client.proxy.intercept_toggle(True)
         assert result["intercept_enabled"] is True
 
     def test_toggle_off(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"intercept_enabled": False}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"intercept_enabled": False}})
         )
         result = client.proxy.intercept_toggle(False)
         assert result["intercept_enabled"] is False
 
     def test_get_intercepted_message(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "has_message": True,
                         "message": {
@@ -185,8 +185,8 @@ class TestProxyIntercept:
         assert result["message"]["id"] == "msg-1"
 
     def test_forward_message(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         result = client.proxy.intercept_forward("msg-1")
         assert result["success"] is True
@@ -194,16 +194,16 @@ class TestProxyIntercept:
     def test_forward_modified_message(self, client, mock_api):
         import json
 
-        route = mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        route = mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         client.proxy.intercept_forward("msg-1", modified_raw="GET /admin HTTP/1.1\r\n")
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["modified_raw"] == "GET /admin HTTP/1.1\r\n"
+        assert body["params"]["arguments"]["modified_raw"] == "GET /admin HTTP/1.1\r\n"
 
     def test_drop_message(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         result = client.proxy.intercept_drop("msg-1")
         assert result["success"] is True
@@ -213,9 +213,9 @@ class TestProxyMatchReplace:
     def test_add_rule(self, client, mock_api):
         import json
 
-        route = mock_api.post("/mcp").mock(
+        route = mock_api.post("/message").mock(
             return_value=httpx.Response(
-                200, json={"result": {"rule_id": "rule-1", "success": True}}
+                200, json={"jsonrpc": "2.0", "id": 1, "result": {"rule_id": "rule-1", "success": True}}
             )
         )
         result = client.proxy.add_match_replace_rule(
@@ -228,4 +228,4 @@ class TestProxyMatchReplace:
         )
         assert result["rule_id"] == "rule-1"
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["rule"]["is_regex"] is True
+        assert body["params"]["arguments"]["rule"]["is_regex"] is True

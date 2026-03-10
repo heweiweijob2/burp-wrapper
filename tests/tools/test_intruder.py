@@ -7,10 +7,10 @@ import httpx
 
 class TestIntruderCreateAttack:
     def test_create_sniper_attack(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "attack_id": "atk-1",
                         "total_requests": 100,
@@ -31,9 +31,9 @@ class TestIntruderCreateAttack:
 
 class TestIntruderStart:
     def test_start_attack(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
-                200, json={"result": {"status": "started", "attack_id": "atk-1"}}
+                200, json={"jsonrpc": "2.0", "id": 1, "result": {"status": "started", "attack_id": "atk-1"}}
             )
         )
         result = client.intruder.start("atk-1")
@@ -42,10 +42,10 @@ class TestIntruderStart:
 
 class TestIntruderQuickFuzz:
     def test_quick_fuzz_returns_results(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "results": [
                             {
@@ -86,23 +86,23 @@ class TestIntruderQuickFuzz:
         assert result["results"][1]["grep_matches"] == ["SQL syntax"]
 
     def test_quick_fuzz_passes_concurrent(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
+        route = mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={"result": {"results": [], "statistics": {"total": 0, "by_status": {}, "anomalies": 0, "errors": 0}}},
+                json={"jsonrpc": "2.0", "id": 1, "result": {"results": [], "statistics": {"total": 0, "by_status": {}, "anomalies": 0, "errors": 0}}},
             )
         )
         client.intruder.quick_fuzz("req-1", "id", ["1", "2"], concurrent=10)
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["concurrent"] == 10
+        assert body["params"]["arguments"]["concurrent"] == 10
 
 
 class TestIntruderStatus:
     def test_status_running(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "status": "running",
                         "progress": {"current": 50, "total": 100, "percentage": 50.0},
@@ -119,10 +119,10 @@ class TestIntruderStatus:
 
 class TestIntruderResults:
     def test_results_with_filters(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
+        route = mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "total": 1,
                         "results": [
@@ -154,27 +154,27 @@ class TestIntruderResults:
         )
         result = client.intruder.results("atk-1", filters={"anomaly_only": True})
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["filters"]["anomaly_only"] is True
+        assert body["params"]["arguments"]["filters"]["anomaly_only"] is True
         assert result["total"] == 1
 
 
 class TestIntruderControl:
     def test_pause(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         assert client.intruder.pause("atk-1")["success"] is True
 
     def test_resume(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         assert client.intruder.resume("atk-1")["success"] is True
 
     def test_stop(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
-                200, json={"result": {"success": True, "requests_completed": 50}}
+                200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True, "requests_completed": 50}}
             )
         )
         result = client.intruder.stop("atk-1")

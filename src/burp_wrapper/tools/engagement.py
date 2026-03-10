@@ -8,8 +8,10 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class EngagementTools(BaseTools):
+    tool_name = "engagement"
+
     def analyze_target(self, url: str) -> dict[str, Any]:
-        return self._call("engagement.analyzeTarget", {"url": url})
+        return self._call("analyzeTarget", {"url": url})
 
     def discover_content(
         self,
@@ -22,12 +24,12 @@ class EngagementTools(BaseTools):
             params["wordlist"] = wordlist
         if config is not None:
             params["config"] = config
-        return self._call("engagement.discoverContent", params)
+        return self._call("discoverContent", params)
 
     def content_discovery_results(self, task_id: str) -> dict[str, Any]:
         return self._call(
-            "engagement.contentDiscoveryResults", {"task_id": task_id}
+            "contentDiscoveryResults", {"task_id": task_id}
         )
 
     def generate_csrf_poc(self, request_id: str) -> dict[str, Any]:
-        return self._call("engagement.generateCsrfPoc", {"request_id": request_id})
+        return self._call("generateCsrfPoc", {"request_id": request_id})

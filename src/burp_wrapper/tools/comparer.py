@@ -8,6 +8,8 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class ComparerTools(BaseTools):
+    tool_name = "comparer"
+
     def diff(
         self,
         request_id_1: str | None = None,
@@ -27,7 +29,7 @@ class ComparerTools(BaseTools):
             params["text2"] = text2
         if options is not None:
             params["options"] = options
-        return self._call("comparer.diff", params)
+        return self._call("diff", params)
 
     def diff_responses(self, request_ids: list[str]) -> dict[str, Any]:
-        return self._call("comparer.diffResponses", {"request_ids": request_ids})
+        return self._call("diffResponses", {"request_ids": request_ids})

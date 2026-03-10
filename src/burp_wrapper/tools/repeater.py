@@ -8,6 +8,8 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class RepeaterTools(BaseTools):
+    tool_name = "repeater"
+
     def send(
         self,
         request_id: str | None = None,
@@ -29,7 +31,7 @@ class RepeaterTools(BaseTools):
             params["host"] = host
             params["port"] = port
             params["https"] = https
-        return self._call("repeater.send", params)
+        return self._call("send", params)
 
     def send_modified(
         self,
@@ -38,7 +40,7 @@ class RepeaterTools(BaseTools):
         follow_redirects: bool = False,
     ) -> dict[str, Any]:
         return self._call(
-            "repeater.sendModified",
+            "sendModified",
             {
                 "request_id": request_id,
                 "modifications": modifications,
@@ -54,7 +56,7 @@ class RepeaterTools(BaseTools):
         delay_ms: int = 0,
     ) -> dict[str, Any]:
         return self._call(
-            "repeater.sendBatch",
+            "sendBatch",
             {
                 "request_id": request_id,
                 "variations": variations,
@@ -67,4 +69,4 @@ class RepeaterTools(BaseTools):
         params: dict[str, Any] = {"request_id": request_id}
         if name is not None:
             params["name"] = name
-        return self._call("repeater.createTab", params)
+        return self._call("createTab", params)

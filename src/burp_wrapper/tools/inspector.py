@@ -8,11 +8,13 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class InspectorTools(BaseTools):
+    tool_name = "inspector"
+
     def parse_request(self, raw_request: str) -> dict[str, Any]:
-        return self._call("inspector.parseRequest", {"raw_request": raw_request})
+        return self._call("parseRequest", {"raw_request": raw_request})
 
     def parse_response(self, raw_response: str) -> dict[str, Any]:
-        return self._call("inspector.parseResponse", {"raw_response": raw_response})
+        return self._call("parseResponse", {"raw_response": raw_response})
 
     def build_request(
         self,
@@ -23,7 +25,7 @@ class InspectorTools(BaseTools):
         body: str = "",
     ) -> dict[str, Any]:
         return self._call(
-            "inspector.buildRequest",
+            "buildRequest",
             {
                 "method": method,
                 "path": path,

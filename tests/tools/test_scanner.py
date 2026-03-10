@@ -7,20 +7,20 @@ import httpx
 
 class TestScannerCrawl:
     def test_crawl_single_target(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
+        route = mock_api.post("/message").mock(
             return_value=httpx.Response(
-                200, json={"result": {"scan_id": "scan-1", "status": "crawling"}}
+                200, json={"jsonrpc": "2.0", "id": 1, "result": {"scan_id": "scan-1", "status": "crawling"}}
             )
         )
         result = client.scanner.crawl("https://example.com")
         assert result["scan_id"] == "scan-1"
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["target"] == "https://example.com"
+        assert body["params"]["arguments"]["target"] == "https://example.com"
 
     def test_crawl_with_config(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
+        route = mock_api.post("/message").mock(
             return_value=httpx.Response(
-                200, json={"result": {"scan_id": "scan-2", "status": "crawling"}}
+                200, json={"jsonrpc": "2.0", "id": 1, "result": {"scan_id": "scan-2", "status": "crawling"}}
             )
         )
         client.scanner.crawl(
@@ -32,33 +32,33 @@ class TestScannerCrawl:
             },
         )
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["config"]["crawl_strategy"] == "most_complete"
+        assert body["params"]["arguments"]["config"]["crawl_strategy"] == "most_complete"
 
 
 class TestScannerAudit:
     def test_audit_target(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
-                200, json={"result": {"scan_id": "scan-3", "status": "auditing"}}
+                200, json={"jsonrpc": "2.0", "id": 1, "result": {"scan_id": "scan-3", "status": "auditing"}}
             )
         )
         result = client.scanner.audit(target="https://example.com")
         assert result["status"] == "auditing"
 
     def test_audit_request(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
+        route = mock_api.post("/message").mock(
             return_value=httpx.Response(
-                200, json={"result": {"scan_id": "scan-4", "status": "auditing"}}
+                200, json={"jsonrpc": "2.0", "id": 1, "result": {"scan_id": "scan-4", "status": "auditing"}}
             )
         )
         client.scanner.audit(request_id="req-1")
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["request_id"] == "req-1"
+        assert body["params"]["arguments"]["request_id"] == "req-1"
 
     def test_audit_with_checks_config(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
+        route = mock_api.post("/message").mock(
             return_value=httpx.Response(
-                200, json={"result": {"scan_id": "scan-5", "status": "auditing"}}
+                200, json={"jsonrpc": "2.0", "id": 1, "result": {"scan_id": "scan-5", "status": "auditing"}}
             )
         )
         client.scanner.audit(
@@ -69,14 +69,14 @@ class TestScannerAudit:
             },
         )
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["config"]["audit_checks"]["sql_injection"] is True
+        assert body["params"]["arguments"]["config"]["audit_checks"]["sql_injection"] is True
 
 
 class TestScannerCrawlAndAudit:
     def test_crawl_and_audit(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
-                200, json={"result": {"scan_id": "scan-6", "status": "crawling"}}
+                200, json={"jsonrpc": "2.0", "id": 1, "result": {"scan_id": "scan-6", "status": "crawling"}}
             )
         )
         result = client.scanner.crawl_and_audit("https://example.com")
@@ -85,10 +85,10 @@ class TestScannerCrawlAndAudit:
 
 class TestScannerStatus:
     def test_status(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "scan_id": "scan-1",
                         "status": "auditing",
@@ -107,10 +107,10 @@ class TestScannerStatus:
 
 class TestScannerIssues:
     def test_get_issues(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "issues": [
                             {
@@ -140,40 +140,40 @@ class TestScannerIssues:
         assert result["issues"][0]["severity"] == "high"
 
     def test_issues_with_filters(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"issues": []}})
+        route = mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"issues": []}})
         )
         client.scanner.issues(filters={"severity": "high", "confidence": "certain"})
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["filters"]["severity"] == "high"
+        assert body["params"]["arguments"]["filters"]["severity"] == "high"
 
 
 class TestScannerControl:
     def test_pause(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         assert client.scanner.pause("scan-1")["success"] is True
 
     def test_resume(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         assert client.scanner.resume("scan-1")["success"] is True
 
     def test_stop(self, client, mock_api):
-        mock_api.post("/mcp").mock(
-            return_value=httpx.Response(200, json={"result": {"success": True}})
+        mock_api.post("/message").mock(
+            return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"success": True}})
         )
         assert client.scanner.stop("scan-1")["success"] is True
 
 
 class TestScannerIssueDefinitions:
     def test_get_definitions(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "definitions": [
                             {

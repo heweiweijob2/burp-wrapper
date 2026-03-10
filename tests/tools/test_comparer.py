@@ -7,10 +7,10 @@ import httpx
 
 class TestComparerDiff:
     def test_diff_by_request_ids(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "similarity_percentage": 85.0,
                         "comparison_mode": "words",
@@ -36,10 +36,10 @@ class TestComparerDiff:
         assert result["summary"]["modified"] == 5
 
     def test_diff_by_raw_text(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "similarity_percentage": 100.0,
                         "comparison_mode": "words",
@@ -55,10 +55,10 @@ class TestComparerDiff:
         assert result["similarity_percentage"] == 100.0
 
     def test_diff_with_options(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
+        route = mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "similarity_percentage": 90.0,
                         "comparison_mode": "bytes",
@@ -76,15 +76,15 @@ class TestComparerDiff:
             options={"compare": "response", "mode": "bytes", "ignore_whitespace": True},
         )
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["options"]["mode"] == "bytes"
+        assert body["params"]["arguments"]["options"]["mode"] == "bytes"
 
 
 class TestComparerDiffResponses:
     def test_diff_multiple_responses(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "comparisons": [
                             {"pair": ["req-1", "req-2"], "similarity": 95.0, "key_differences": ["Content-Length"]},

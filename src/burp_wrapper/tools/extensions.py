@@ -8,14 +8,16 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class ExtensionsTools(BaseTools):
+    tool_name = "extensions"
+
     def list(self) -> dict[str, Any]:
-        return self._call("extensions.list")
+        return self._call("list")
 
     def enable(self, name: str) -> dict[str, Any]:
-        return self._call("extensions.enable", {"name": name})
+        return self._call("enable", {"name": name})
 
     def disable(self, name: str) -> dict[str, Any]:
-        return self._call("extensions.disable", {"name": name})
+        return self._call("disable", {"name": name})
 
     def reload(self, name: str) -> dict[str, Any]:
-        return self._call("extensions.reload", {"name": name})
+        return self._call("reload", {"name": name})

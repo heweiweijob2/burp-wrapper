@@ -8,6 +8,8 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class IntruderTools(BaseTools):
+    tool_name = "intruder"
+
     def create_attack(
         self,
         request_id: str,
@@ -33,10 +35,10 @@ class IntruderTools(BaseTools):
             config["grep_extract"] = grep_extract
         if options is not None:
             config["options"] = options
-        return self._call("intruder.createAttack", {"config": config})
+        return self._call("createAttack", {"config": config})
 
     def start(self, attack_id: str) -> dict[str, Any]:
-        return self._call("intruder.start", {"attack_id": attack_id})
+        return self._call("start", {"attack_id": attack_id})
 
     def quick_fuzz(
         self,
@@ -46,7 +48,7 @@ class IntruderTools(BaseTools):
         concurrent: int = 5,
     ) -> dict[str, Any]:
         return self._call(
-            "intruder.quickFuzz",
+            "quickFuzz",
             {
                 "request_id": request_id,
                 "param_name": param_name,
@@ -56,7 +58,7 @@ class IntruderTools(BaseTools):
         )
 
     def status(self, attack_id: str) -> dict[str, Any]:
-        return self._call("intruder.status", {"attack_id": attack_id})
+        return self._call("status", {"attack_id": attack_id})
 
     def results(
         self,
@@ -74,13 +76,13 @@ class IntruderTools(BaseTools):
         }
         if filters is not None:
             params["filters"] = filters
-        return self._call("intruder.results", params)
+        return self._call("results", params)
 
     def pause(self, attack_id: str) -> dict[str, Any]:
-        return self._call("intruder.pause", {"attack_id": attack_id})
+        return self._call("pause", {"attack_id": attack_id})
 
     def resume(self, attack_id: str) -> dict[str, Any]:
-        return self._call("intruder.resume", {"attack_id": attack_id})
+        return self._call("resume", {"attack_id": attack_id})
 
     def stop(self, attack_id: str) -> dict[str, Any]:
-        return self._call("intruder.stop", {"attack_id": attack_id})
+        return self._call("stop", {"attack_id": attack_id})

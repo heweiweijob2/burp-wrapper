@@ -7,10 +7,10 @@ import httpx
 
 class TestCollaboratorGeneratePayload:
     def test_generate_single_payload(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "payload": "abc123.oastify.com",
                         "interaction_id": "int-1",
@@ -24,10 +24,10 @@ class TestCollaboratorGeneratePayload:
         assert result["interaction_id"] == "int-1"
 
     def test_generate_multiple_payloads(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "payloads": [
                             {"payload": "a.oastify.com", "interaction_id": "int-1"},
@@ -44,10 +44,10 @@ class TestCollaboratorGeneratePayload:
 
 class TestCollaboratorPoll:
     def test_poll_all(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "interactions": [
                             {
@@ -69,22 +69,22 @@ class TestCollaboratorPoll:
         assert result["interactions"][0]["type"] == "dns"
 
     def test_poll_specific_interaction(self, client, mock_api):
-        route = mock_api.post("/mcp").mock(
+        route = mock_api.post("/message").mock(
             return_value=httpx.Response(
-                200, json={"result": {"interactions": []}}
+                200, json={"jsonrpc": "2.0", "id": 1, "result": {"interactions": []}}
             )
         )
         client.collaborator.poll(interaction_id="int-1")
         body = json.loads(route.calls.last.request.content.decode())
-        assert body["params"]["interaction_id"] == "int-1"
+        assert body["params"]["arguments"]["interaction_id"] == "int-1"
 
 
 class TestCollaboratorPollUntil:
     def test_poll_until_found(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={
+                json={"jsonrpc": "2.0", "id": 1,
                     "result": {
                         "found": True,
                         "interaction": {
@@ -106,10 +106,10 @@ class TestCollaboratorPollUntil:
         assert result["interaction"]["type"] == "http"
 
     def test_poll_until_timeout(self, client, mock_api):
-        mock_api.post("/mcp").mock(
+        mock_api.post("/message").mock(
             return_value=httpx.Response(
                 200,
-                json={"result": {"found": False, "interaction": None, "elapsed_seconds": 30}},
+                json={"jsonrpc": "2.0", "id": 1, "result": {"found": False, "interaction": None, "elapsed_seconds": 30}},
             )
         )
         result = client.collaborator.poll_until("int-1", timeout_seconds=30)

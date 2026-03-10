@@ -8,6 +8,8 @@ from burp_wrapper.tools.base import BaseTools
 
 
 class SequencerTools(BaseTools):
+    tool_name = "sequencer"
+
     def start_live_capture(
         self,
         request_id: str,
@@ -15,7 +17,7 @@ class SequencerTools(BaseTools):
         sample_count: int = 200,
     ) -> dict[str, Any]:
         return self._call(
-            "sequencer.startLiveCapture",
+            "startLiveCapture",
             {
                 "request_id": request_id,
                 "token_config": token_config,
@@ -24,13 +26,13 @@ class SequencerTools(BaseTools):
         )
 
     def capture_status(self, capture_id: str) -> dict[str, Any]:
-        return self._call("sequencer.captureStatus", {"capture_id": capture_id})
+        return self._call("captureStatus", {"capture_id": capture_id})
 
     def analyze(self, capture_id: str) -> dict[str, Any]:
-        return self._call("sequencer.analyze", {"capture_id": capture_id})
+        return self._call("analyze", {"capture_id": capture_id})
 
     def analyze_manual(self, tokens: list[str]) -> dict[str, Any]:
-        return self._call("sequencer.analyzeManual", {"tokens": tokens})
+        return self._call("analyzeManual", {"tokens": tokens})
 
     def results(self, analysis_id: str) -> dict[str, Any]:
-        return self._call("sequencer.results", {"analysis_id": analysis_id})
+        return self._call("results", {"analysis_id": analysis_id})
