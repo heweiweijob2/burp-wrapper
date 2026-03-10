@@ -1,35 +1,24 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-*.egg-info/
-*.egg
-dist/
+# Gradle
+.gradle/
 build/
-.eggs/
-
-# Virtual environments
-.venv/
-venv/
-env/
+!gradle/wrapper/gradle-wrapper.jar
 
 # IDE
-.vscode/
 .idea/
+*.iml
+.vscode/
 *.swp
 *.swo
 *~
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
+# Kotlin / Java
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Ruff
-.ruff_cache/
+# Logs
+logs/

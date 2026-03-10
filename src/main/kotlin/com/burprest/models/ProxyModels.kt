@@ -1,0 +1,60 @@
+package com.burprest.models
+
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class HttpHeader(
+    val name: String,
+    val value: String,
+)
+
+@Serializable
+data class HttpRequestData(
+    val method: String,
+    val url: String,
+    val headers: List<HttpHeader> = emptyList(),
+    val body: String? = null,
+)
+
+@Serializable
+data class HttpResponseData(
+    val statusCode: Int,
+    val headers: List<HttpHeader> = emptyList(),
+    val body: String? = null,
+)
+
+@Serializable
+data class ProxyEntry(
+    val id: Int,
+    val request: HttpRequestData,
+    val response: HttpResponseData? = null,
+    val timestamp: String? = null,
+    val listenerInterface: String? = null,
+    val clientIp: String? = null,
+)
+
+@Serializable
+data class ProxyHistoryResponse(
+    val total: Int,
+    val entries: List<ProxyEntry>,
+)
+
+@Serializable
+data class WebSocketEntry(
+    val id: Int,
+    val url: String,
+    val direction: String,
+    val payload: String,
+    val timestamp: String? = null,
+)
+
+@Serializable
+data class WebSocketHistoryResponse(
+    val total: Int,
+    val entries: List<WebSocketEntry>,
+)
+
+@Serializable
+data class InterceptStatusResponse(
+    val enabled: Boolean,
+)

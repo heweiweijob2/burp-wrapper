@@ -1,324 +1,279 @@
-# burp-wrapper
+# burp-rest-extension
 
-Python wrapper for the Burp Suite MCP Server API. Gives AI agents (Claude Code, Gemini CLI, etc.) full programmatic access to every Burp Suite Pro tool.
+Burp Suite extension that exposes the entire Montoya API via REST HTTP. Load the JAR into Burp and get a full REST API on `http://127.0.0.1:8089`.
 
-```python
-from burp_wrapper import BurpClient
+Built for AI agents (Claude Code, Gemini CLI, etc.) and automation scripts.
 
-with BurpClient(target="target.com") as burp:
-    # Browse proxy history
-    history = burp.proxy.get_history(limit=50, filter_host="target.com")
+```bash
+# Health check
+curl http://127.0.0.1:8089/health
 
-    # Replay a request
-    response = burp.repeater.send(request_id="req-1")
+# Get proxy history
+curl http://127.0.0.1:8089/proxy/history?limit=10
 
-    # Fuzz a parameter
-    results = burp.intruder.quick_fuzz(
-        request_id="req-1",
-        param_name="username",
-        payloads=["admin", "test", "' OR 1=1--"],
-    )
+# Send a request via Repeater
+curl -X POST http://127.0.0.1:8089/repeater/send \
+  -H "Content-Type: application/json" \
+  -d '{"request":{"method":"GET","url":"https://target.com/api"}}'
 
-    # Out-of-band testing
-    collab = burp.collaborator.generate_payload()
-    burp.repeater.send_modified("req-1", modifications={
-        "headers": {"X-Forwarded-For": f"http://{collab['payload']}"}
-    })
-    interactions = burp.collaborator.poll_until(collab["interaction_id"])
+# Quick fuzz a parameter
+curl -X POST http://127.0.0.1:8089/intruder/quick-fuzz \
+  -H "Content-Type: application/json" \
+  -d '{"requestId":0,"param":"id","payloads":["1","2","'\''OR 1=1--"]}'
 
-    if interactions["found"]:
-        burp.session.log_finding({
-            "name": "SSRF via X-Forwarded-For",
-            "severity": "high",
-            "url": "https://target.com/api/fetch",
-            "evidence": interactions
-        })
+# Generate Collaborator payload
+curl -X POST http://127.0.0.1:8089/collaborator/generate
 
-# Session report generated automatically on exit
+# Start a scan
+curl -X POST http://127.0.0.1:8089/scanner/crawl-and-audit \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://target.com"}'
 ```
 
 ## Requirements
 
-- Python 3.11+
-- Burp Suite Pro with the [MCP Server extension](https://portswigger.net/burp/documentation/desktop/extensions) running on `localhost:9876`
+- Burp Suite Pro
+- Java 17+
 
 ## Install
 
 ```bash
-pip install burp-wrapper
+# Build from source
+./gradlew shadowJar
+
+# Output: build/libs/burp-rest-extension.jar
 ```
 
-Or from source:
+In Burp: **Extensions → Add → Extension Type: Java → Select JAR**
 
-```bash
-git clone https://github.com/momomuchu/burp-wrapper.git
-cd burp-wrapper
-pip install -e ".[dev]"
-```
+The API starts automatically on `http://127.0.0.1:8089`.
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                  AI AGENT                            │
-│          (Claude Code / Gemini CLI / etc.)           │
-│                                                      │
-│  from burp_wrapper import BurpClient                │
-└────────────────────────┬────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│                    AI AGENT / SCRIPT                    │
+│           (Claude Code / Gemini CLI / curl / etc.)      │
+└────────────────────────┬───────────────────────────────┘
                          │
-                         │  Python method calls
+                         │  REST HTTP (JSON)
                          v
-┌─────────────────────────────────────────────────────┐
-│              BURP WRAPPER                            │
-│                                                      │
-│  BurpClient                                          │
-│    .proxy     .repeater    .intruder    .scanner     │
-│    .decoder   .collaborator .target    .sequencer    │
-│    .comparer  .logger      .dashboard  .engagement   │
-│    .organizer .search      .inspector  .extensions   │
-│    .config    .clickbandit                           │
-│                                                      │
-│  SessionLogger  ->  JSONL logs + markdown reports    │
-│  BurpTransport  ->  JSON-RPC 2.0 over HTTP          │
-└────────────────────────┬────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│              BURP REST EXTENSION                        │
+│                                                         │
+│  Ktor Embedded Server on :8089                          │
+│                                                         │
+│  /proxy/*        /repeater/*      /intruder/*           │
+│  /scanner/*      /collaborator/*  /target/*             │
+│  /decoder/*      /sequencer/*     /comparer/*           │
+│  /logger/*       /config/*        /extensions           │
+│  /search         /health          /docs                 │
+│                                                         │
+│  Request logging → Burp output console                  │
+│  Error handling  → JSON error responses                 │
+│  CORS enabled    → local access from any origin         │
+└────────────────────────┬───────────────────────────────┘
                          │
-                         │  POST /message (JSON-RPC 2.0)
+                         │  Montoya API (direct)
                          v
-┌─────────────────────────────────────────────────────┐
-│          BURP SUITE PRO + MCP SERVER                 │
-│                                                      │
-│  PortSwigger official extension on :9876             │
-│  Exposes Burp tools via MCP protocol                 │
-└─────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│                  BURP SUITE PRO                         │
+│                                                         │
+│  Proxy · Repeater · Intruder · Scanner                  │
+│  Collaborator · Target · Decoder · Sequencer            │
+│  Comparer · Logger · Config · Extensions                │
+└────────────────────────────────────────────────────────┘
 ```
 
-## Features
+## Endpoints
 
-### Session Logging
+### Core (P0)
 
-Every action is automatically logged to JSONL files for replay, debugging, and reporting.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| GET | `/version` | Extension version |
+| GET | `/docs` | OpenAPI spec |
 
-```python
-with BurpClient(target="example.com", log_dir="./logs") as burp:
-    burp.proxy.get_history()
-    burp.repeater.send(request_id="req-1")
+### Proxy
 
-    # Log a vulnerability finding
-    burp.session.log_finding({
-        "name": "SQL Injection",
-        "severity": "high",
-        "url": "https://example.com/login",
-        "detail": "Error-based SQLi in username parameter"
-    })
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/proxy/history` | List captured requests (`?limit=N&offset=N&host=X`) |
+| GET | `/proxy/history/{id}` | Detail of a specific request |
+| GET | `/proxy/websocket/history` | WebSocket history |
+| POST | `/proxy/intercept/enable` | Enable interception |
+| POST | `/proxy/intercept/disable` | Disable interception |
+| POST | `/proxy/intercept/forward` | Forward intercepted request |
+| POST | `/proxy/intercept/drop` | Drop intercepted request |
 
-    # Export report anytime
-    report = burp.export_report("markdown")
+### Repeater
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/repeater/send` | Send a request |
+| POST | `/repeater/send/batch` | Send multiple requests |
+| POST | `/repeater/tab/create` | Create Repeater tab |
+
+### Intruder
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/intruder/attack/create` | Configure an attack |
+| POST | `/intruder/attack/{id}/start` | Start attack |
+| GET | `/intruder/attack/{id}/status` | Attack status |
+| GET | `/intruder/attack/{id}/results` | Attack results |
+| POST | `/intruder/attack/{id}/pause` | Pause |
+| POST | `/intruder/attack/{id}/resume` | Resume |
+| POST | `/intruder/attack/{id}/stop` | Stop |
+| POST | `/intruder/quick-fuzz` | Quick fuzz a parameter |
+
+### Scanner
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/scanner/crawl` | Start crawl |
+| POST | `/scanner/audit` | Start audit |
+| POST | `/scanner/crawl-and-audit` | Start crawl + audit |
+| GET | `/scanner/{id}/status` | Scan status |
+| GET | `/scanner/{id}/issues` | Found issues |
+| POST | `/scanner/{id}/pause` | Pause scan |
+| POST | `/scanner/{id}/resume` | Resume scan |
+| POST | `/scanner/{id}/stop` | Stop scan |
+| GET | `/scanner/issue-definitions` | Issue type definitions |
+
+### Collaborator
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/collaborator/generate` | Generate payload |
+| POST | `/collaborator/generate/batch` | Generate multiple payloads |
+| GET | `/collaborator/poll` | Poll all interactions |
+| GET | `/collaborator/poll/{id}` | Poll specific payload |
+
+### Target
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/target/sitemap` | Get sitemap (`?url=prefix`) |
+| GET | `/target/scope` | Get current scope |
+| POST | `/target/scope` | Set scope |
+| POST | `/target/scope/add` | Add URL to scope |
+| POST | `/target/scope/remove` | Remove from scope |
+| GET | `/target/scope/check` | Check if URL in scope (`?url=X`) |
+
+### Decoder
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/decoder/encode` | Encode (base64, url, hex, html) |
+| POST | `/decoder/decode` | Decode |
+| POST | `/decoder/hash` | Hash (md5, sha1, sha256, sha512) |
+| POST | `/decoder/smart-decode` | Auto-detect and decode layers |
+
+### Config & Extensions
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/config/project` | Project config |
+| PUT | `/config/project` | Update project config |
+| GET | `/config/user` | User config |
+| PUT | `/config/user` | Update user config |
+| GET | `/extensions` | List extensions |
+
+## Response Format
+
+All endpoints return:
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "error": null
+}
 ```
 
-Session files:
-```
-logs/sessions/
-  20260310_143022_example_com.jsonl   # Every action + finding
-  20260310_143022_summary.json         # Session summary
-```
+On error:
 
-Sensitive parameters (passwords, tokens, cookies) are automatically redacted in logs.
-
-### Context Manager
-
-```python
-# Automatic cleanup: session report generated on exit
-with BurpClient(target="target.com") as burp:
-    ...
-
-# Or manual lifecycle
-burp = BurpClient(target="target.com")
-# ... do work ...
-burp.end_session()
-burp.close()
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "Missing required field: url"
+  }
+}
 ```
 
-### Exception Hierarchy
+## Stack
 
-```python
-from burp_wrapper import (
-    BurpWrapperError,         # Base exception
-    BurpAPIError,             # API returned an error
-    BurpConnectionError,      # Can't connect to Burp
-    NotImplementedInBurpMCP,  # Feature not in official MCP Server
-    SessionError,             # Logging error
-)
+- **Kotlin** + Montoya API
+- **Ktor** embedded HTTP server (Netty)
+- **kotlinx.serialization** for JSON
+- **Gradle** with Shadow plugin for fat JAR
+- **MockK** for testing
+
+## Project Structure
+
 ```
+src/main/kotlin/com/burprest/
+    BurpRestExtension.kt        # Extension entry point
+    server/
+        RestServer.kt            # Ktor server setup + middleware
+    routes/
+        HealthRoutes.kt          # /health, /version, /docs
+        ProxyRoutes.kt           # /proxy/*
+        RepeaterRoutes.kt        # /repeater/*
+        CollaboratorRoutes.kt    # /collaborator/*
+        IntruderRoutes.kt        # /intruder/*
+        ScannerRoutes.kt         # /scanner/*
+        TargetRoutes.kt          # /target/*
+        DecoderRoutes.kt         # /decoder/*
+        ConfigRoutes.kt          # /config/*, /extensions
+    services/
+        ProxyService.kt          # Montoya Proxy API wrapper
+        RepeaterService.kt       # HTTP request sending
+        CollaboratorService.kt   # Collaborator client management
+        IntruderService.kt       # Attack management + quick fuzz
+        ScannerService.kt        # Scan management
+        TargetService.kt         # Sitemap + scope
+        DecoderService.kt        # Encode/decode/hash (no Burp needed)
+        ConfigService.kt         # Config + extensions info
+    models/
+        ApiResponse.kt           # Standard response wrapper
+        ProxyModels.kt           # Proxy DTOs
+        RepeaterModels.kt        # Repeater DTOs
+        CollaboratorModels.kt    # Collaborator DTOs
+        IntruderModels.kt        # Intruder DTOs
+        ScannerModels.kt         # Scanner DTOs
+        TargetModels.kt          # Target DTOs
+        DecoderModels.kt         # Decoder DTOs
+        SequencerModels.kt       # Sequencer DTOs
+        OtherModels.kt           # Logger, Search, Config, Health DTOs
 
-## Tools Covered
-
-| Tool | Methods | MCP Support |
-|------|---------|-------------|
-| **Proxy** | `get_history`, `get_request`, `get_websocket_history`, `intercept_*`, `add_match_replace_rule` | Direct |
-| **Repeater** | `send`, `send_modified`, `send_batch`, `create_tab` | Direct |
-| **Intruder** | `create_attack`, `start`, `quick_fuzz`, `status`, `results`, `pause`, `resume`, `stop` | Partial |
-| **Scanner** | `crawl`, `audit`, `crawl_and_audit`, `status`, `issues`, `pause`, `resume`, `stop`, `get_issue_definitions` | Needs extension |
-| **Decoder** | `encode`, `decode`, `smart_decode`, `hash`, `hash_all` | Partial |
-| **Collaborator** | `generate_payload`, `generate_payloads`, `poll`, `poll_until` | Direct |
-| **Target** | `get_sitemap`, `get_scope`, `set_scope`, `add_to_scope`, `is_in_scope`, `get_issues` | Partial |
-| **Dashboard** | `get_tasks`, `get_issues_summary` | Direct |
-| **Sequencer** | `start_live_capture`, `capture_status`, `analyze`, `analyze_manual`, `results` | Needs extension |
-| **Comparer** | `diff`, `diff_responses` | Needs extension |
-| **Logger** | `query`, `annotate`, `export` | Needs extension |
-| **Inspector** | `parse_request`, `parse_response`, `build_request` | Needs extension |
-| **Engagement** | `analyze_target`, `discover_content`, `content_discovery_results`, `generate_csrf_poc` | Needs extension |
-| **Search** | `find` | Needs extension |
-| **Config** | `get_project`, `get_user`, `export_project`, `import_project` | Direct |
-| **Organizer** | `add`, `list`, `annotate`, `get_collections`, `create_collection` | Needs extension |
-| **Extensions** | `list`, `enable`, `disable`, `reload` | Needs extension |
-| **Clickbandit** | `generate` | Needs extension |
-
-**18 tools, 70+ methods.**
-
-**MCP Support legend:**
-- **Direct** -- Supported by the official PortSwigger MCP Server
-- **Partial** -- Some methods supported, others need extension
-- **Needs extension** -- Requires forking the MCP Server or a custom Burp extension
-
-## Usage Examples
-
-### Scan a target
-
-```python
-burp = BurpClient()
-burp.target.add_to_scope("https://target.com")
-
-scan = burp.scanner.crawl_and_audit("https://target.com", config={
-    "crawl_strategy": "most_complete",
-    "audit_optimization": "thorough",
-})
-
-status = burp.scanner.status(scan["scan_id"])
-print(f"Progress: {status['audit_progress']['percentage']}%")
-
-issues = burp.scanner.issues(scan_id=scan["scan_id"], filters={"severity": "high"})
-```
-
-### Intercept and modify traffic
-
-```python
-burp.proxy.intercept_toggle(True)
-
-msg = burp.proxy.intercept_get_message()
-if msg["has_message"]:
-    modified = msg["message"]["raw"].replace("User-Agent: Chrome", "User-Agent: Bot")
-    burp.proxy.intercept_forward(msg["message"]["id"], modified_raw=modified)
-```
-
-### Compare responses for access control testing
-
-```python
-admin_resp = burp.repeater.send_modified("req-1", modifications={
-    "headers": {"Cookie": "session=admin_token"}
-})
-user_resp = burp.repeater.send_modified("req-1", modifications={
-    "headers": {"Cookie": "session=user_token"}
-})
-
-diff = burp.comparer.diff(
-    request_id_1=admin_resp["new_request_id"],
-    request_id_2=user_resp["new_request_id"],
-    options={"compare": "response"}
-)
-print(f"Similarity: {diff['similarity_percentage']}%")
-```
-
-### SSRF detection with Collaborator
-
-```python
-with BurpClient(target="target.com") as burp:
-    collab = burp.collaborator.generate_payload()
-
-    burp.repeater.send_modified("req-1", modifications={
-        "headers": {"X-Forwarded-For": f"http://{collab['payload']}"}
-    })
-
-    result = burp.collaborator.poll_until(collab["interaction_id"], timeout_seconds=30)
-
-    if result["found"]:
-        burp.session.log_finding({
-            "name": "SSRF via X-Forwarded-For",
-            "severity": "high",
-            "url": "https://target.com/api/fetch",
-            "evidence": result
-        })
-```
-
-### Token randomness analysis
-
-```python
-result = burp.sequencer.analyze_manual([
-    "abc123", "def456", "ghi789",  # ... 200+ tokens
-])
-analysis = burp.sequencer.results(result["analysis_id"])
-print(f"Entropy: {analysis['effective_entropy_bits']} bits")
-print(f"FIPS: {'PASS' if analysis['fips_tests']['overall_passed'] else 'FAIL'}")
-```
-
-## Configuration
-
-```python
-# Custom host/port
-burp = BurpClient(base_url="http://192.168.1.100:9876")
-
-# Custom timeout (seconds)
-burp = BurpClient(timeout=60.0)
-
-# Disable logging
-burp = BurpClient(enable_logging=False)
-
-# Custom log directory
-burp = BurpClient(target="example.com", log_dir="/tmp/burp-logs")
+src/test/kotlin/com/burprest/
+    services/
+        DecoderServiceTest.kt    # 14 tests
+        ProxyServiceTest.kt      # 7 tests
+    routes/
+        HealthRoutesTest.kt      # 3 tests
+        DecoderRoutesTest.kt     # 4 tests
 ```
 
 ## Development
 
 ```bash
-pip install -e ".[dev]"
+# Compile
+./gradlew compileKotlin
 
-# Run tests (146 tests, no Burp instance needed)
-pytest -v
+# Run tests
+./gradlew test
 
-# Lint
-ruff check src/ tests/
-```
+# Build fat JAR
+./gradlew shadowJar
 
-## Project Structure
-
-```
-src/burp_wrapper/
-    __init__.py              # Public API exports
-    client.py                # BurpClient with context manager + session logging
-    transport.py             # JSON-RPC 2.0 transport layer
-    exceptions.py            # Exception hierarchy
-    session_logger.py        # JSONL action logging + markdown reports
-    tools/
-        base.py              # BaseTools with auto-logging + _not_implemented
-        proxy.py             # 7 methods
-        repeater.py          # 4 methods
-        intruder.py          # 7 methods
-        scanner.py           # 9 methods
-        decoder.py           # 5 methods
-        collaborator.py      # 4 methods
-        target.py            # 6 methods
-        sequencer.py         # 5 methods
-        comparer.py          # 2 methods
-        logger.py            # 3 methods
-        dashboard.py         # 2 methods
-        organizer.py         # 5 methods
-        search.py            # 1 method
-        inspector.py         # 3 methods
-        engagement.py        # 4 methods
-        extensions.py        # 4 methods
-        config.py            # 4 methods
-        clickbandit.py       # 1 method
-
-tests/                       # 146 tests
+# Output: build/libs/burp-rest-extension.jar (15MB)
 ```
 
 ## License
